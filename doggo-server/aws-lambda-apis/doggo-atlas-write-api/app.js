@@ -1,0 +1,49 @@
+const jwt = require('jsonwebtoken');
+const express = require('express');
+const bodyParser = require("body-parser");
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+const cors = require('cors');
+
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }));
+
+//Connect to the DB
+const connectionUrl = "mongodb+srv://admin-terance:password@cluster0-u5arr.mongodb.net/doggoDB?retryWrites=true&w=majority/"
+mongoose.connect(connectionUrl, { useNewUrlParser: true });
+mongoose.set("useCreateIndex", true)
+// Set up a whitelist and check against it:
+
+// Then pass them to cors:
+
+const Schema = mongoose.Schema;
+//Mongoose Schemas
+const userSchema = new Schema({ name: String, email: { type: String, unique: true, dropDups: true }, password: String });
+
+const User = mongoose.model("user", userSchema);
+// //Format of token 
+// //Authorization: Bearer <access_token>
+app.post('/doggo-atlas-write-api', (req, res) => {
+    const password = req.body.password;
+    bcrypt.hash(password, saltRounds, function (err, hash) {
+        const newUser = new User({
+            email: req.body.email,
+            password: hash,
+            name: req.body.name
+        });
+        newUser.save((err) => {
+            if (err) {
+                console.log(err);
+                res.sendStatus(403)
+            } else {
+                console.log("Success!");
+                res.sendStatus(200);
+            }
+        });
+    });
+});
+
+module.exports = app
